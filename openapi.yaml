@@ -1,0 +1,2925 @@
+openapi: 3.1.0
+info:
+  title: Friendzone API
+  description: |
+    HTTP API powering the Friendzone mobile app. The backend exposes OAuth/phone
+    authentication, friend relationship management, hangout logging, scheduling
+    utilities, push notification helpers, media uploads, subscription validation,
+    and admin tooling for feature flags, API keys, users, and cron jobs.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Local development (default PORT=3000)
+  - url: https://api.friendzone.app
+    description: Production gateway (set via deployment config)
+tags:
+  - name: Health
+  - name: Auth
+  - name: Feature Flags
+  - name: Friends
+  - name: Hangouts
+  - name: Settings
+  - name: Calendar
+  - name: Notifications
+  - name: Images
+  - name: Users
+  - name: Subscriptions
+  - name: Admin Feature Flags
+  - name: Admin API Keys
+  - name: Admin Users
+  - name: Admin Jobs
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Liveness probe
+      operationId: getHealth
+      responses:
+        "200":
+          description: Service is responsive
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/auth/oauth/google:
+    post:
+      tags: [Auth]
+      summary: Sign in with Google OAuth
+      operationId: postAuthOAuthGoogle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OAuthAuthenticateRequest"
+      responses:
+        "200":
+          description: Authenticated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/AuthSession"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/auth/oauth/apple:
+    post:
+      tags: [Auth]
+      summary: Sign in with Apple OAuth
+      operationId: postAuthOAuthApple
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OAuthAuthenticateRequest"
+      responses:
+        "200":
+          description: Authenticated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/AuthSession"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/auth/phone/send:
+    post:
+      tags: [Auth]
+      summary: Send SMS verification code
+      operationId: postAuthPhoneSend
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PhoneCodeRequest"
+      responses:
+        "200":
+          description: Verification code dispatched
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      message:
+                        type: string
+                        example: Verification code sent
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/auth/phone/verify:
+    post:
+      tags: [Auth]
+      summary: Verify SMS code and issue session
+      operationId: postAuthPhoneVerify
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PhoneVerificationRequest"
+      responses:
+        "200":
+          description: Phone verified and session issued
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/PhoneVerificationResult"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Exchange refresh token for new JWTs
+      operationId: postAuthRefresh
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenRequest"
+      responses:
+        "200":
+          description: Tokens refreshed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/AuthTokens"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/features/check/{featureName}:
+    get:
+      tags: [Feature Flags]
+      summary: Check if a user has access to a feature
+      operationId: getFeatureFlagCheck
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: featureName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Feature access state
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  featureName:
+                    type: string
+                  hasAccess:
+                    type: boolean
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/friends:
+    get:
+      tags: [Friends]
+      summary: List friends
+      operationId: getFriends
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Pageless list of all friends for the user
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/FriendList"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+    post:
+      tags: [Friends]
+      summary: Add friend
+      operationId: postFriends
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddFriendRequest"
+      responses:
+        "201":
+          description: Friend created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          friend:
+                            $ref: "#/components/schemas/Friend"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/friends/overdue:
+    get:
+      tags: [Friends]
+      summary: List overdue friends
+      operationId: getOverdueFriends
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Friends sorted by overdue score
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/FriendOverdueList"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/friends/{friendId}:
+    get:
+      tags: [Friends]
+      summary: Get friend details
+      operationId: getFriendById
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/FriendId"
+      responses:
+        "200":
+          description: Friend details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          friend:
+                            $ref: "#/components/schemas/Friend"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+    delete:
+      tags: [Friends]
+      summary: Remove friend
+      operationId: deleteFriend
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/FriendId"
+      responses:
+        "200":
+          description: Friend removed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          success:
+                            type: boolean
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/friends/{friendId}/frequency:
+    patch:
+      tags: [Friends]
+      summary: Update friend frequency
+      operationId: patchFriendFrequency
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/FriendId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [frequency]
+              properties:
+                frequency:
+                  $ref: "#/components/schemas/Frequency"
+      responses:
+        "200":
+          description: Frequency updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          friend:
+                            $ref: "#/components/schemas/Friend"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/hangouts:
+    get:
+      tags: [Hangouts]
+      summary: List hangout logs
+      operationId: getHangouts
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: friendId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Hangout history page
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/HangoutHistory"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+    post:
+      tags: [Hangouts]
+      summary: Log hangout
+      operationId: postHangouts
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogHangoutRequest"
+      responses:
+        "201":
+          description: Hangout recorded
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          hangout:
+                            $ref: "#/components/schemas/HangoutLog"
+                          friend:
+                            $ref: "#/components/schemas/Friend"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/hangouts/stats:
+    get:
+      tags: [Hangouts]
+      summary: Retrieve engagement stats
+      operationId: getHangoutStats
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Aggregated stats
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          stats:
+                            $ref: "#/components/schemas/HangoutStats"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/hangouts/suggest:
+    post:
+      tags: [Hangouts]
+      summary: Create hangout request
+      operationId: postHangoutsSuggest
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HangoutSuggestionRequest"
+      responses:
+        "201":
+          description: Hangout request created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/HangoutSuggestionResult"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/hangouts/suggest/{hangoutRequestId}/state:
+    patch:
+      tags: [Hangouts]
+      summary: Update hangout request status
+      operationId: patchHangoutRequestState
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: hangoutRequestId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HangoutRequestStateUpdate"
+      responses:
+        "200":
+          description: Request status updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/HangoutRequestStateResult"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/settings:
+    get:
+      tags: [Settings]
+      summary: Get user settings
+      operationId: getSettings
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Settings retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/UserSettingsBundle"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/settings/notifications:
+    patch:
+      tags: [Settings]
+      summary: Update notification preferences
+      operationId: patchNotificationSettings
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationPreferencesUpdate"
+      responses:
+        "200":
+          description: Preferences updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          settings:
+                            $ref: "#/components/schemas/UserSettings"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/settings/timezone:
+    patch:
+      tags: [Settings]
+      summary: Update timezone
+      operationId: patchTimezone
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [timezone]
+              properties:
+                timezone:
+                  type: string
+                  description: Valid IANA timezone identifier
+      responses:
+        "200":
+          description: Timezone updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            $ref: "#/components/schemas/User"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/calendar/connect:
+    post:
+      tags: [Calendar]
+      summary: Connect Google Calendar
+      operationId: postCalendarConnect
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code:
+                  type: string
+                  description: Google OAuth serverAuthCode
+      responses:
+        "200":
+          description: Calendar connected
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/CalendarConnectionSummary"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/calendar/sync:
+    post:
+      tags: [Calendar]
+      summary: Trigger calendar sync
+      operationId: postCalendarSync
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CalendarSyncRequest"
+      responses:
+        "200":
+          description: Sync completed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/CalendarSyncResult"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/calendar/availability:
+    get:
+      tags: [Calendar]
+      summary: Compute availability windows
+      operationId: getCalendarAvailability
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: startDate
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: endDate
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: minDurationMinutes
+          schema:
+            type: integer
+            minimum: 15
+            maximum: 1440
+      responses:
+        "200":
+          description: Availability computed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/AvailabilityResult"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/calendar/disconnect:
+    delete:
+      tags: [Calendar]
+      summary: Disconnect calendar
+      operationId: deleteCalendarConnection
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Disconnected
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          disconnected:
+                            type: boolean
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/calendar/status:
+    get:
+      tags: [Calendar]
+      summary: Inspect connection status
+      operationId: getCalendarStatus
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current connection status
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/CalendarStatus"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/notifications/register-device:
+    post:
+      tags: [Notifications]
+      summary: Register push device token
+      operationId: postNotificationsRegisterDevice
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterDeviceRequest"
+      responses:
+        "201":
+          description: Device registered
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          deviceToken:
+                            $ref: "#/components/schemas/DeviceToken"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/notifications/history:
+    get:
+      tags: [Notifications]
+      summary: Get notification history
+      operationId: getNotificationsHistory
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - in: query
+          name: deliveryStatus
+          schema:
+            $ref: "#/components/schemas/NotificationDeliveryStatus"
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: History results
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/NotificationHistoryResult"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/notifications/send-test:
+    post:
+      tags: [Notifications]
+      summary: Send a test push notification
+      operationId: postNotificationsSendTest
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendNotificationRequest"
+      responses:
+        "200":
+          description: Notification send result
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/SendNotificationResult"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/notifications/{notificationId}/read:
+    patch:
+      tags: [Notifications]
+      summary: Mark notification as read
+      operationId: patchNotificationRead
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          notification:
+                            $ref: "#/components/schemas/NotificationHistory"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/images/upload-url/profile:
+    post:
+      tags: [Images]
+      summary: Generate profile upload URL
+      operationId: postImagesUploadUrlProfile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Signed upload payload
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/SignedUpload"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/images/upload-url/hangout/{hangoutId}:
+    post:
+      tags: [Images]
+      summary: Generate hangout upload URL
+      operationId: postImagesUploadUrlHangout
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/HangoutId"
+      responses:
+        "200":
+          description: Signed upload payload
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/SignedUpload"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/images/profile:
+    put:
+      tags: [Images]
+      summary: Persist profile picture URL
+      operationId: putImagesProfile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [imageUrl]
+              properties:
+                imageUrl:
+                  type: string
+                  format: uri
+      responses:
+        "200":
+          description: Profile picture saved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/ProfileImageResult"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/images/hangout/{hangoutId}:
+    post:
+      tags: [Images]
+      summary: Save hangout image URL
+      operationId: postImagesHangout
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/HangoutId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [imageUrl]
+              properties:
+                imageUrl:
+                  type: string
+                  format: uri
+      responses:
+        "200":
+          description: Image recorded
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/HangoutImageResult"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+    delete:
+      tags: [Images]
+      summary: Remove hangout image
+      operationId: deleteImagesHangout
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/HangoutId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [imageUrl]
+              properties:
+                imageUrl:
+                  type: string
+                  format: uri
+      responses:
+        "200":
+          description: Remaining images listed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/HangoutImageList"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/users/me:
+    get:
+      tags: [Users]
+      summary: Retrieve current user profile
+      operationId: getUsersMe
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Profile info
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/UserProfile"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+    delete:
+      tags: [Users]
+      summary: Permanently delete account
+      operationId: deleteUsersMe
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Account deleted
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      message:
+                        type: string
+                      data:
+                        $ref: "#/components/schemas/DeleteAccountResult"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/v1/subscriptions/validate-ios:
+    post:
+      tags: [Subscriptions]
+      summary: Validate Apple IAP receipt
+      operationId: postSubscriptionsValidateIos
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [receiptData]
+              properties:
+                receiptData:
+                  type: string
+                  description: Base64 encoded App Store receipt
+      responses:
+        "200":
+          description: Receipt processed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/IosReceiptResult"
+        default:
+          $ref: "#/components/responses/ErrorResponse"
+
+  /api/admin/features:
+    get:
+      tags: [Admin Feature Flags]
+      summary: List feature flags
+      operationId: getAdminFeatures
+      security:
+        - adminApiKey: []
+      responses:
+        "200":
+          description: Feature catalog
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  features:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FeatureFlag"
+    post:
+      tags: [Admin Feature Flags]
+      summary: Create feature flag
+      operationId: postAdminFeatures
+      security:
+        - adminApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFeatureRequest"
+      responses:
+        "201":
+          description: Feature created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  feature:
+                    $ref: "#/components/schemas/FeatureFlag"
+
+  /api/admin/features/{featureId}:
+    delete:
+      tags: [Admin Feature Flags]
+      summary: Delete feature flag
+      operationId: deleteAdminFeature
+      security:
+        - adminApiKey: []
+      parameters:
+        - name: featureId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Deleted
+
+  /api/admin/features/{featureName}/default:
+    patch:
+      tags: [Admin Feature Flags]
+      summary: Set default state
+      operationId: patchAdminFeatureDefault
+      security:
+        - adminApiKey: []
+      parameters:
+        - name: featureName
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled]
+              properties:
+                enabled:
+                  type: boolean
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /api/admin/features/{featureName}/enable-all:
+    post:
+      tags: [Admin Feature Flags]
+      summary: Force enable for all users
+      operationId: postAdminFeatureEnableAll
+      security:
+        - adminApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/FeatureName"
+      responses:
+        "200":
+          description: Operation summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+
+  /api/admin/features/{featureName}/disable-all:
+    post:
+      tags: [Admin Feature Flags]
+      summary: Force disable for all users
+      operationId: postAdminFeatureDisableAll
+      security:
+        - adminApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/FeatureName"
+      responses:
+        "200":
+          description: Operation summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+
+  /api/admin/features/{featureName}/users/{userId}/enable:
+    post:
+      tags: [Admin Feature Flags]
+      summary: Enable feature for user
+      operationId: postAdminFeatureEnableUser
+      security:
+        - adminApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/FeatureName"
+        - $ref: "#/components/parameters/AdminUserId"
+      responses:
+        "200":
+          description: Result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /api/admin/features/{featureName}/users/{userId}/disable:
+    post:
+      tags: [Admin Feature Flags]
+      summary: Disable feature for user
+      operationId: postAdminFeatureDisableUser
+      security:
+        - adminApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/FeatureName"
+        - $ref: "#/components/parameters/AdminUserId"
+      responses:
+        "200":
+          description: Result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /api/admin/features/{featureName}/users/{userId}/override:
+    delete:
+      tags: [Admin Feature Flags]
+      summary: Remove user override
+      operationId: deleteAdminFeatureOverride
+      security:
+        - adminApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/FeatureName"
+        - $ref: "#/components/parameters/AdminUserId"
+      responses:
+        "200":
+          description: Result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /api/admin/features/{featureName}/users/enable:
+    post:
+      tags: [Admin Feature Flags]
+      summary: Enable feature for multiple users
+      operationId: postAdminFeatureEnableUsers
+      security:
+        - adminApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/FeatureName"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userIds]
+              properties:
+                userIds:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  minItems: 1
+                  maxItems: 1000
+      responses:
+        "200":
+          description: Result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  count:
+                    type: integer
+
+  /api/admin/features/{featureName}/users:
+    get:
+      tags: [Admin Feature Flags]
+      summary: List users with feature
+      operationId: getAdminFeatureUsers
+      security:
+        - adminApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/FeatureName"
+      responses:
+        "200":
+          description: Matching users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FeatureUser"
+
+  /api/admin/features/users/{userId}:
+    get:
+      tags: [Admin Feature Flags]
+      summary: Inspect user feature assignments
+      operationId: getAdminUserFeatures
+      security:
+        - adminApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/AdminUserId"
+      responses:
+        "200":
+          description: Feature overrides
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  features:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FeatureFlag"
+
+  /api/admin/api-keys:
+    get:
+      tags: [Admin API Keys]
+      summary: List admin API keys
+      operationId: getAdminApiKeys
+      security:
+        - adminApiKey: []
+      responses:
+        "200":
+          description: API key metadata (hashes not returned)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  keys:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AdminApiKey"
+    post:
+      tags: [Admin API Keys]
+      summary: Create admin API key
+      operationId: postAdminApiKeys
+      security:
+        - adminApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAdminApiKeyRequest"
+      responses:
+        "201":
+          description: API key issued (key value only shown once)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateAdminApiKeyResponse"
+
+  /api/admin/api-keys/{keyId}:
+    delete:
+      tags: [Admin API Keys]
+      summary: Revoke admin API key
+      operationId: deleteAdminApiKey
+      security:
+        - adminApiKey: []
+      parameters:
+        - name: keyId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Revoked
+
+  /api/admin/users/search/phone:
+    get:
+      tags: [Admin Users]
+      summary: Find users by phone
+      operationId: getAdminUsersByPhone
+      security:
+        - adminApiKey: []
+      parameters:
+        - in: query
+          name: phoneNumber
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Matching users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  count:
+                    type: integer
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AdminUserSummary"
+
+  /api/admin/users/{userId}:
+    get:
+      tags: [Admin Users]
+      summary: Get user by ID
+      operationId: getAdminUserById
+      security:
+        - adminApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/AdminUserId"
+      responses:
+        "200":
+          description: User record with relations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: "#/components/schemas/AdminUserDetail"
+    delete:
+      tags: [Admin Users]
+      summary: Hard delete user
+      operationId: deleteAdminUser
+      security:
+        - adminApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/AdminUserId"
+      responses:
+        "200":
+          description: User deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: "#/components/schemas/DeleteAccountResult"
+
+  /api/admin/users/{userId}/upgrade-premium:
+    post:
+      tags: [Admin Users]
+      summary: Upgrade user to premium
+      operationId: postAdminUserUpgrade
+      security:
+        - adminApiKey: []
+      parameters:
+        - $ref: "#/components/parameters/AdminUserId"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expiresInYears:
+                  type: integer
+                  minimum: 1
+                  default: 1
+      responses:
+        "200":
+          description: Premium activated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: "#/components/schemas/AdminPremiumUpgradeResult"
+
+  /api/admin/jobs:
+    get:
+      tags: [Admin Jobs]
+      summary: List registered jobs
+      operationId: getAdminJobs
+      security:
+        - adminApiKey: []
+      responses:
+        "200":
+          description: Registered jobs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  count:
+                    type: integer
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/JobDescriptor"
+
+  /api/admin/jobs/status:
+    get:
+      tags: [Admin Jobs]
+      summary: Job scheduler status
+      operationId: getAdminJobsStatus
+      security:
+        - adminApiKey: []
+      responses:
+        "200":
+          description: Status map
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: "#/components/schemas/JobStatusMap"
+
+  /api/admin/jobs/executions:
+    get:
+      tags: [Admin Jobs]
+      summary: Recent job executions
+      operationId: getAdminJobExecutions
+      security:
+        - adminApiKey: []
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 50
+      responses:
+        "200":
+          description: Execution records
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  count:
+                    type: integer
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/JobExecution"
+
+  /api/admin/jobs/{jobName}/trigger:
+    post:
+      tags: [Admin Jobs]
+      summary: Manually trigger job
+      operationId: postAdminJobTrigger
+      security:
+        - adminApiKey: []
+      parameters:
+        - name: jobName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "202":
+          description: Job accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    $ref: "#/components/schemas/JobTriggerResult"
+
+  /api/admin/jobs/{jobName}/executions:
+    get:
+      tags: [Admin Jobs]
+      summary: Execution history for job
+      operationId: getAdminJobExecutionHistory
+      security:
+        - adminApiKey: []
+      parameters:
+        - name: jobName
+          in: path
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 20
+      responses:
+        "200":
+          description: Execution history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  count:
+                    type: integer
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/JobExecution"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        Access token issued by `/api/v1/auth/oauth/*`, `/phone/verify`, or `/refresh`.
+        Pass as `Authorization: Bearer <token>`.
+    adminApiKey:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: >
+        Admin endpoints accept either `x-api-key: <key>` or `Authorization: Bearer <key>`
+        headers. Keys encode scopes such as `features:read`, `users:write`, or `admin:*`.
+  responses:
+    ErrorResponse:
+      description: Error response envelope
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+  parameters:
+    FriendId:
+      name: friendId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    HangoutId:
+      name: hangoutId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    FeatureName:
+      name: featureName
+      in: path
+      required: true
+      schema:
+        type: string
+    AdminUserId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    SuccessEnvelope:
+      type: object
+      properties:
+        success:
+          type: boolean
+          default: true
+        data:
+          description: Endpoint-specific payload
+          nullable: true
+      required: [success]
+
+    ErrorEnvelope:
+      type: object
+      properties:
+        success:
+          type: boolean
+          default: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+              additionalProperties: true
+      required: [success, error]
+
+    OAuthAuthenticateRequest:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+          description: OAuth credential returned by Google/Apple SDKs
+        timezone:
+          type: string
+          description: Optional IANA timezone reported by the client
+
+    AuthSession:
+      type: object
+      properties:
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            email:
+              type: string
+              format: email
+              nullable: true
+            name:
+              type: string
+              nullable: true
+            profilePictureUrl:
+              type: string
+              format: uri
+              nullable: true
+            phoneVerified:
+              type: boolean
+            phoneNumber:
+              type: string
+              nullable: true
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        requiresPhoneVerification:
+          type: boolean
+
+    PhoneCodeRequest:
+      type: object
+      required: [phoneNumber]
+      properties:
+        phoneNumber:
+          type: string
+        userId:
+          type: string
+          format: uuid
+          nullable: true
+
+    PhoneVerificationRequest:
+      type: object
+      required: [phoneNumber, code]
+      properties:
+        phoneNumber:
+          type: string
+        code:
+          type: string
+          description: Numeric verification code
+        userId:
+          type: string
+          format: uuid
+          nullable: true
+        timezone:
+          type: string
+          nullable: true
+
+    PhoneVerificationResult:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/UserSummary"
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        isNewUser:
+          type: boolean
+
+    UserSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+          nullable: true
+        name:
+          type: string
+          nullable: true
+        phoneVerified:
+          type: boolean
+        phoneNumber:
+          type: string
+          nullable: true
+        profilePictureUrl:
+          type: string
+          format: uri
+          nullable: true
+
+    RefreshTokenRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+
+    AuthTokens:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+
+    Frequency:
+      type: string
+      enum: [WEEKLY, BIWEEKLY, MONTHLY, FLEXIBLE]
+
+    Friend:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        phoneNumber:
+          type: string
+          nullable: true
+        linkedUserId:
+          type: string
+          format: uuid
+          nullable: true
+        targetFrequency:
+          $ref: "#/components/schemas/Frequency"
+        lastSeenDate:
+          type: string
+          format: date-time
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    FriendWithOverdue:
+      allOf:
+        - $ref: "#/components/schemas/Friend"
+        - type: object
+          properties:
+            daysOverdue:
+              type: number
+            overdueScore:
+              type: number
+
+    AddFriendRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        phoneNumber:
+          type: string
+          nullable: true
+        targetFrequency:
+          $ref: "#/components/schemas/Frequency"
+        notes:
+          type: string
+          nullable: true
+
+    FriendList:
+      type: object
+      properties:
+        friends:
+          type: array
+          items:
+            $ref: "#/components/schemas/Friend"
+        total:
+          type: integer
+
+    FriendOverdueList:
+      type: object
+      properties:
+        friends:
+          type: array
+          items:
+            $ref: "#/components/schemas/FriendWithOverdue"
+        total:
+          type: integer
+
+    HangoutLog:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        friendId:
+          type: string
+          format: uuid
+        hangoutDate:
+          type: string
+          format: date-time
+        notes:
+          type: string
+          nullable: true
+        imageUrls:
+          type: array
+          items:
+            type: string
+            format: uri
+        hangoutRequestId:
+          type: string
+          format: uuid
+          nullable: true
+        loggedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    HangoutHistory:
+      type: object
+      properties:
+        hangouts:
+          type: array
+          items:
+            $ref: "#/components/schemas/HangoutLog"
+        total:
+          type: integer
+        hasMore:
+          type: boolean
+
+    LogHangoutRequest:
+      type: object
+      required: [friendId, hangoutDate]
+      properties:
+        friendId:
+          type: string
+          format: uuid
+        hangoutDate:
+          type: string
+          format: date-time
+        notes:
+          type: string
+          nullable: true
+        imageUrls:
+          type: array
+          items:
+            type: string
+            format: uri
+        hangoutRequestId:
+          type: string
+          format: uuid
+          nullable: true
+
+    HangoutStats:
+      type: object
+      properties:
+        totalHangouts:
+          type: integer
+        last7Days:
+          type: integer
+        last30Days:
+          type: integer
+        last90Days:
+          type: integer
+        mostFrequentFriends:
+          type: array
+          items:
+            type: object
+            properties:
+              friendId:
+                type: string
+                format: uuid
+              friendName:
+                type: string
+              count:
+                type: integer
+
+    HangoutSuggestionRequest:
+      type: object
+      required: [friendId, proposedDatetime]
+      properties:
+        friendId:
+          type: string
+          format: uuid
+        proposedDatetime:
+          type: string
+          format: date-time
+        hangoutType:
+          type: string
+          enum: [COFFEE, MEAL, ACTIVITY, DRINKS, OTHER]
+        venueName:
+          type: string
+          nullable: true
+        venueAddress:
+          type: string
+          nullable: true
+        venueDetails:
+          type: object
+          additionalProperties: true
+
+    HangoutRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        initiatorId:
+          type: string
+          format: uuid
+        recipientId:
+          type: string
+          format: uuid
+        friendId:
+          type: string
+          format: uuid
+          nullable: true
+        hangoutType:
+          type: string
+          nullable: true
+        proposedDatetime:
+          type: string
+          format: date-time
+        venueName:
+          type: string
+          nullable: true
+        venueAddress:
+          type: string
+          nullable: true
+        venueDetails:
+          type: object
+          additionalProperties: true
+          nullable: true
+        status:
+          type: string
+          enum: [PENDING, ACCEPTED, DECLINED, CANCELLED, COMPLETED]
+        calendarEventId:
+          type: string
+          nullable: true
+        confirmedAt:
+          type: string
+          format: date-time
+          nullable: true
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    HangoutSuggestionResult:
+      type: object
+      properties:
+        hangoutRequest:
+          $ref: "#/components/schemas/HangoutRequest"
+        isFreeTime:
+          type: boolean
+
+    HangoutRequestStateUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ACCEPTED, DECLINED, CANCELLED]
+
+    HangoutRequestStateResult:
+      type: object
+      properties:
+        hangoutRequest:
+          $ref: "#/components/schemas/HangoutRequest"
+        calendarEventCreated:
+          type: boolean
+        calendarEventDeleted:
+          type: boolean
+
+    UserSettings:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        loggingReminderEnabled:
+          type: boolean
+        loggingReminderDay:
+          type: integer
+          minimum: 0
+          maximum: 6
+        loggingReminderTime:
+          type: string
+          pattern: "^([0-1][0-9]|2[0-3]):([0-5][0-9])$"
+        reachoutReminderEnabled:
+          type: boolean
+        reachoutReminderDay:
+          type: integer
+          minimum: 0
+          maximum: 6
+        reachoutReminderTime:
+          type: string
+        hangoutRemindersEnabled:
+          type: boolean
+        language:
+          type: string
+        otherPreferences:
+          type: object
+          additionalProperties: true
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    UserSettingsBundle:
+      type: object
+      properties:
+        settings:
+          $ref: "#/components/schemas/UserSettings"
+        timezone:
+          type: string
+
+    NotificationPreferencesUpdate:
+      type: object
+      properties:
+        loggingReminderEnabled:
+          type: boolean
+        loggingReminderDay:
+          type: integer
+          minimum: 0
+          maximum: 6
+        loggingReminderTime:
+          type: string
+        reachoutReminderEnabled:
+          type: boolean
+        reachoutReminderDay:
+          type: integer
+        reachoutReminderTime:
+          type: string
+        hangoutRemindersEnabled:
+          type: boolean
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+          nullable: true
+        name:
+          type: string
+          nullable: true
+        phoneNumber:
+          type: string
+          nullable: true
+        phoneVerified:
+          type: boolean
+        timezone:
+          type: string
+        profilePictureUrl:
+          type: string
+          format: uri
+          nullable: true
+        isPremium:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CalendarConnectionSummary:
+      type: object
+      properties:
+        connected:
+          type: boolean
+        connectionId:
+          type: string
+          format: uuid
+        provider:
+          type: string
+          example: GOOGLE
+        syncEnabled:
+          type: boolean
+
+    CalendarSyncRequest:
+      type: object
+      properties:
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+
+    CalendarSyncResult:
+      type: object
+      properties:
+        eventsFetched:
+          type: integer
+        lastSyncedAt:
+          type: string
+          format: date-time
+          nullable: true
+        events:
+          type: array
+          description: Provider-specific event payloads
+          items:
+            type: object
+            additionalProperties: true
+
+    AvailabilitySlot:
+      type: object
+      properties:
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+
+    AvailabilityResult:
+      type: object
+      properties:
+        freeSlots:
+          type: array
+          items:
+            $ref: "#/components/schemas/AvailabilitySlot"
+        totalFreeSlots:
+          type: integer
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+
+    CalendarStatus:
+      type: object
+      properties:
+        connected:
+          type: boolean
+        provider:
+          type: string
+          nullable: true
+        lastSyncedAt:
+          type: string
+          format: date-time
+          nullable: true
+        syncEnabled:
+          type: boolean
+
+    RegisterDeviceRequest:
+      type: object
+      required: [token, platform]
+      properties:
+        token:
+          type: string
+        platform:
+          type: string
+          enum: [IOS, ANDROID]
+
+    DeviceToken:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        token:
+          type: string
+        platform:
+          type: string
+          enum: [IOS, ANDROID]
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    NotificationDeliveryStatus:
+      type: string
+      enum: [PENDING, DELIVERED, FAILED, READ]
+
+    NotificationHistory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        notificationType:
+          type: string
+        title:
+          type: string
+          nullable: true
+        body:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
+          nullable: true
+        deliveryStatus:
+          $ref: "#/components/schemas/NotificationDeliveryStatus"
+        deliveredAt:
+          type: string
+          format: date-time
+          nullable: true
+        readAt:
+          type: string
+          format: date-time
+          nullable: true
+        errorMessage:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    NotificationHistoryResult:
+      type: object
+      properties:
+        notifications:
+          type: array
+          items:
+            $ref: "#/components/schemas/NotificationHistory"
+        total:
+          type: integer
+
+    NotificationType:
+      type: string
+      enum:
+        - LOGGING_REMINDER
+        - REACHOUT_REMINDER
+        - POST_HANGOUT_CHECK
+        - PRE_HANGOUT_REMINDER
+        - HANGOUT_LOG_REMINDER
+        - HANGOUT_REQUEST_STATE_REMINDER
+        - ONBOARDING_CONNECT_CALENDAR
+        - ONBOARDING_ADD_FIRST_FRIEND
+        - ONBOARDING_SET_PREFERENCES
+
+    SendNotificationRequest:
+      type: object
+      required: [notificationType]
+      properties:
+        notificationType:
+          $ref: "#/components/schemas/NotificationType"
+        templateData:
+          type: object
+          additionalProperties:
+            type: string
+        imageUrl:
+          type: string
+          format: uri
+          nullable: true
+        additionalData:
+          type: object
+          additionalProperties:
+            type: string
+
+    SendNotificationResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        messagesSent:
+          type: integer
+        notificationHistoryId:
+          type: string
+          format: uuid
+        blocked:
+          type: boolean
+          nullable: true
+        blockReason:
+          type: string
+          nullable: true
+
+    SignedUpload:
+      type: object
+      required: [uploadUrl, imageUrl, expiresIn]
+      properties:
+        uploadUrl:
+          type: string
+          format: uri
+        imageUrl:
+          type: string
+          format: uri
+        expiresIn:
+          type: integer
+      additionalProperties:
+        oneOf:
+          - type: string
+          - type: number
+
+    ProfileImageResult:
+      type: object
+      properties:
+        profilePictureUrl:
+          type: string
+          format: uri
+
+    HangoutImageResult:
+      type: object
+      properties:
+        imageUrl:
+          type: string
+          format: uri
+        imageUrls:
+          type: array
+          items:
+            type: string
+            format: uri
+
+    HangoutImageList:
+      type: object
+      properties:
+        imageUrls:
+          type: array
+          items:
+            type: string
+            format: uri
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          nullable: true
+        email:
+          type: string
+          format: email
+          nullable: true
+        phoneNumber:
+          type: string
+          nullable: true
+        profilePictureUrl:
+          type: string
+          format: uri
+          nullable: true
+        timezone:
+          type: string
+        isPremium:
+          type: boolean
+        premiumInfo:
+          type: object
+          properties:
+            expiresAt:
+              type: string
+              format: date-time
+              nullable: true
+            platform:
+              type: string
+              nullable: true
+        limits:
+          type: object
+          properties:
+            friends:
+              type: object
+              properties:
+                used:
+                  type: integer
+                limit:
+                  type: integer
+                  nullable: true
+                remaining:
+                  type: integer
+                  nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    DeleteAccountResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+
+    IosReceiptResult:
+      type: object
+      properties:
+        isPremium:
+          type: boolean
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        platform:
+          type: string
+          example: IOS
+
+    FeatureFlag:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        enabledByDefault:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateFeatureRequest:
+      type: object
+      required: [name, enabledByDefault]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        enabledByDefault:
+          type: boolean
+
+    FeatureUser:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        enabled:
+          type: boolean
+        overridden:
+          type: boolean
+
+    AdminApiKey:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        isActive:
+          type: boolean
+        lastUsedAt:
+          type: string
+          format: date-time
+          nullable: true
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateAdminApiKeyRequest:
+      type: object
+      required: [name, scopes]
+      properties:
+        name:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        expiresInDays:
+          type: integer
+          minimum: 1
+          nullable: true
+
+    CreateAdminApiKeyResponse:
+      type: object
+      properties:
+        key:
+          type: string
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        warning:
+          type: string
+
+    AdminUserSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        phoneNumber:
+          type: string
+          nullable: true
+        phoneNumberNormalized:
+          type: string
+          nullable: true
+        phoneVerified:
+          type: boolean
+        email:
+          type: string
+          format: email
+          nullable: true
+        name:
+          type: string
+          nullable: true
+        isPremium:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    OAuthAccount:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        provider:
+          type: string
+        providerId:
+          type: string
+        email:
+          type: string
+          format: email
+          nullable: true
+        emailVerified:
+          type: boolean
+        name:
+          type: string
+          nullable: true
+        picture:
+          type: string
+          format: uri
+          nullable: true
+
+    AdminUserDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        phoneNumber:
+          type: string
+          nullable: true
+        phoneNumberNormalized:
+          type: string
+          nullable: true
+        phoneVerified:
+          type: boolean
+        email:
+          type: string
+          format: email
+          nullable: true
+        name:
+          type: string
+          nullable: true
+        profilePictureUrl:
+          type: string
+          format: uri
+          nullable: true
+        timezone:
+          type: string
+        isPremium:
+          type: boolean
+        premiumExpiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        subscriptionPlatform:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        settings:
+          $ref: "#/components/schemas/UserSettings"
+        deviceTokens:
+          type: array
+          items:
+            $ref: "#/components/schemas/DeviceToken"
+        oauthAccounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/OAuthAccount"
+
+    AdminPremiumUpgradeResult:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        isPremium:
+          type: boolean
+        expiresAt:
+          type: string
+          format: date-time
+        platform:
+          type: string
+          example: ADMIN
+
+    JobDescriptor:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          $ref: "#/components/schemas/JobStatus"
+
+    JobStatus:
+      type: object
+      properties:
+        scheduled:
+          type: boolean
+        running:
+          type: boolean
+
+    JobStatusMap:
+      type: object
+      additionalProperties:
+        $ref: "#/components/schemas/JobStatus"
+
+    JobExecution:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        jobName:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          type: string
+          enum: [RUNNING, SUCCESS, FAILED, TIMEOUT]
+        errorMessage:
+          type: string
+          nullable: true
+        metrics:
+          type: object
+          additionalProperties: true
+          nullable: true
+        executionTimeMs:
+          type: integer
+          nullable: true
+
+    JobTriggerResult:
+      type: object
+      properties:
+        jobName:
+          type: string
+        status:
+          type: string
+          example: triggered
