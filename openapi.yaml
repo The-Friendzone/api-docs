@@ -8,9 +8,9 @@ info:
     and admin tooling for feature flags, API keys, users, and cron jobs.
   version: 1.0.0
 servers:
-  - url: http://localhost:3000
-    description: Local development (default PORT=3000)
-  - url: https://api.friendzone.app
+  - url: https://dev.friendzoned.app
+    description: Development gateway (set via deployment config)
+  - url: https://api.friendzoned.app
     description: Production gateway (set via deployment config)
 tags:
   - name: Health
@@ -35,7 +35,7 @@ paths:
       summary: Liveness probe
       operationId: getHealth
       responses:
-        "200":
+        '200':
           description: Service is responsive
           content:
             application/json:
@@ -46,7 +46,7 @@ paths:
                     type: string
                     example: ok
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/auth/oauth/google:
     post:
@@ -58,21 +58,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/OAuthAuthenticateRequest"
+              $ref: '#/components/schemas/OAuthAuthenticateRequest'
       responses:
-        "200":
+        '200':
           description: Authenticated successfully
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/AuthSession"
+                        $ref: '#/components/schemas/AuthSession'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/auth/oauth/apple:
     post:
@@ -84,21 +84,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/OAuthAuthenticateRequest"
+              $ref: '#/components/schemas/OAuthAuthenticateRequest'
       responses:
-        "200":
+        '200':
           description: Authenticated successfully
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/AuthSession"
+                        $ref: '#/components/schemas/AuthSession'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/auth/phone/send:
     post:
@@ -110,22 +110,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PhoneCodeRequest"
+              $ref: '#/components/schemas/PhoneCodeRequest'
       responses:
-        "200":
+        '200':
           description: Verification code dispatched
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       message:
                         type: string
                         example: Verification code sent
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/auth/phone/verify:
     post:
@@ -137,21 +137,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PhoneVerificationRequest"
+              $ref: '#/components/schemas/PhoneVerificationRequest'
       responses:
-        "200":
+        '200':
           description: Phone verified and session issued
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/PhoneVerificationResult"
+                        $ref: '#/components/schemas/PhoneVerificationResult'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/auth/refresh:
     post:
@@ -163,21 +163,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/RefreshTokenRequest"
+              $ref: '#/components/schemas/RefreshTokenRequest'
       responses:
-        "200":
+        '200':
           description: Tokens refreshed
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/AuthTokens"
+                        $ref: '#/components/schemas/AuthTokens'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/features/check/{featureName}:
     get:
@@ -193,7 +193,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: Feature access state
           content:
             application/json:
@@ -205,7 +205,7 @@ paths:
                   hasAccess:
                     type: boolean
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/friends:
     get:
@@ -215,19 +215,19 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "200":
+        '200':
           description: Pageless list of all friends for the user
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/FriendList"
+                        $ref: '#/components/schemas/FriendList'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
     post:
       tags: [Friends]
       summary: Add friend
@@ -239,24 +239,24 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AddFriendRequest"
+              $ref: '#/components/schemas/AddFriendRequest'
       responses:
-        "201":
+        '201':
           description: Friend created
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
                         type: object
                         properties:
                           friend:
-                            $ref: "#/components/schemas/Friend"
+                            $ref: '#/components/schemas/Friend'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/friends/overdue:
     get:
@@ -266,19 +266,19 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "200":
+        '200':
           description: Friends sorted by overdue score
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/FriendOverdueList"
+                        $ref: '#/components/schemas/FriendOverdueList'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/friends/{friendId}:
     get:
@@ -288,24 +288,24 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: "#/components/parameters/FriendId"
+        - $ref: '#/components/parameters/FriendId'
       responses:
-        "200":
+        '200':
           description: Friend details
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
                         type: object
                         properties:
                           friend:
-                            $ref: "#/components/schemas/Friend"
+                            $ref: '#/components/schemas/Friend'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
     delete:
       tags: [Friends]
       summary: Remove friend
@@ -313,15 +313,15 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: "#/components/parameters/FriendId"
+        - $ref: '#/components/parameters/FriendId'
       responses:
-        "200":
+        '200':
           description: Friend removed
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
@@ -330,7 +330,7 @@ paths:
                           success:
                             type: boolean
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/friends/{friendId}/frequency:
     patch:
@@ -340,7 +340,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: "#/components/parameters/FriendId"
+        - $ref: '#/components/parameters/FriendId'
       requestBody:
         required: true
         content:
@@ -350,24 +350,24 @@ paths:
               required: [frequency]
               properties:
                 frequency:
-                  $ref: "#/components/schemas/Frequency"
+                  $ref: '#/components/schemas/Frequency'
       responses:
-        "200":
+        '200':
           description: Frequency updated
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
                         type: object
                         properties:
                           friend:
-                            $ref: "#/components/schemas/Friend"
+                            $ref: '#/components/schemas/Friend'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/hangouts:
     get:
@@ -406,19 +406,19 @@ paths:
             type: string
             format: date-time
       responses:
-        "200":
+        '200':
           description: Hangout history page
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/HangoutHistory"
+                        $ref: '#/components/schemas/HangoutHistory'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
     post:
       tags: [Hangouts]
       summary: Log hangout
@@ -430,26 +430,26 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/LogHangoutRequest"
+              $ref: '#/components/schemas/LogHangoutRequest'
       responses:
-        "201":
+        '201':
           description: Hangout recorded
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
                         type: object
                         properties:
                           hangout:
-                            $ref: "#/components/schemas/HangoutLog"
+                            $ref: '#/components/schemas/HangoutLog'
                           friend:
-                            $ref: "#/components/schemas/Friend"
+                            $ref: '#/components/schemas/Friend'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/hangouts/stats:
     get:
@@ -459,22 +459,22 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "200":
+        '200':
           description: Aggregated stats
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
                         type: object
                         properties:
                           stats:
-                            $ref: "#/components/schemas/HangoutStats"
+                            $ref: '#/components/schemas/HangoutStats'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/hangouts/suggest:
     post:
@@ -488,21 +488,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/HangoutSuggestionRequest"
+              $ref: '#/components/schemas/HangoutSuggestionRequest'
       responses:
-        "201":
+        '201':
           description: Hangout request created
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/HangoutSuggestionResult"
+                        $ref: '#/components/schemas/HangoutSuggestionResult'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/hangouts/suggest/{hangoutRequestId}/state:
     patch:
@@ -523,21 +523,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/HangoutRequestStateUpdate"
+              $ref: '#/components/schemas/HangoutRequestStateUpdate'
       responses:
-        "200":
+        '200':
           description: Request status updated
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/HangoutRequestStateResult"
+                        $ref: '#/components/schemas/HangoutRequestStateResult'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/settings:
     get:
@@ -547,19 +547,19 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "200":
+        '200':
           description: Settings retrieved
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/UserSettingsBundle"
+                        $ref: '#/components/schemas/UserSettingsBundle'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/settings/notifications:
     patch:
@@ -573,24 +573,24 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/NotificationPreferencesUpdate"
+              $ref: '#/components/schemas/NotificationPreferencesUpdate'
       responses:
-        "200":
+        '200':
           description: Preferences updated
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
                         type: object
                         properties:
                           settings:
-                            $ref: "#/components/schemas/UserSettings"
+                            $ref: '#/components/schemas/UserSettings'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/settings/timezone:
     patch:
@@ -611,22 +611,22 @@ paths:
                   type: string
                   description: Valid IANA timezone identifier
       responses:
-        "200":
+        '200':
           description: Timezone updated
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
                         type: object
                         properties:
                           user:
-                            $ref: "#/components/schemas/User"
+                            $ref: '#/components/schemas/User'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/calendar/connect:
     post:
@@ -647,19 +647,19 @@ paths:
                   type: string
                   description: Google OAuth serverAuthCode
       responses:
-        "200":
+        '200':
           description: Calendar connected
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/CalendarConnectionSummary"
+                        $ref: '#/components/schemas/CalendarConnectionSummary'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/calendar/sync:
     post:
@@ -672,21 +672,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CalendarSyncRequest"
+              $ref: '#/components/schemas/CalendarSyncRequest'
       responses:
-        "200":
+        '200':
           description: Sync completed
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/CalendarSyncResult"
+                        $ref: '#/components/schemas/CalendarSyncResult'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/calendar/availability:
     get:
@@ -715,19 +715,19 @@ paths:
             minimum: 15
             maximum: 1440
       responses:
-        "200":
+        '200':
           description: Availability computed
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/AvailabilityResult"
+                        $ref: '#/components/schemas/AvailabilityResult'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/calendar/disconnect:
     delete:
@@ -737,13 +737,13 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "200":
+        '200':
           description: Disconnected
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
@@ -752,7 +752,7 @@ paths:
                           disconnected:
                             type: boolean
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/calendar/status:
     get:
@@ -762,19 +762,19 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "200":
+        '200':
           description: Current connection status
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/CalendarStatus"
+                        $ref: '#/components/schemas/CalendarStatus'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/notifications/register-device:
     post:
@@ -788,24 +788,24 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/RegisterDeviceRequest"
+              $ref: '#/components/schemas/RegisterDeviceRequest'
       responses:
-        "201":
+        '201':
           description: Device registered
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
                         type: object
                         properties:
                           deviceToken:
-                            $ref: "#/components/schemas/DeviceToken"
+                            $ref: '#/components/schemas/DeviceToken'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/notifications/history:
     get:
@@ -831,7 +831,7 @@ paths:
         - in: query
           name: deliveryStatus
           schema:
-            $ref: "#/components/schemas/NotificationDeliveryStatus"
+            $ref: '#/components/schemas/NotificationDeliveryStatus'
         - in: query
           name: startDate
           schema:
@@ -843,19 +843,19 @@ paths:
             type: string
             format: date-time
       responses:
-        "200":
+        '200':
           description: History results
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/NotificationHistoryResult"
+                        $ref: '#/components/schemas/NotificationHistoryResult'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/notifications/send-test:
     post:
@@ -869,21 +869,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SendNotificationRequest"
+              $ref: '#/components/schemas/SendNotificationRequest'
       responses:
-        "200":
+        '200':
           description: Notification send result
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/SendNotificationResult"
+                        $ref: '#/components/schemas/SendNotificationResult'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/notifications/{notificationId}/read:
     patch:
@@ -900,22 +900,22 @@ paths:
             type: string
             format: uuid
       responses:
-        "200":
+        '200':
           description: Notification marked as read
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
                         type: object
                         properties:
                           notification:
-                            $ref: "#/components/schemas/NotificationHistory"
+                            $ref: '#/components/schemas/NotificationHistory'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/images/upload-url/profile:
     post:
@@ -925,19 +925,19 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "200":
+        '200':
           description: Signed upload payload
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/SignedUpload"
+                        $ref: '#/components/schemas/SignedUpload'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/images/upload-url/hangout/{hangoutId}:
     post:
@@ -947,21 +947,21 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: "#/components/parameters/HangoutId"
+        - $ref: '#/components/parameters/HangoutId'
       responses:
-        "200":
+        '200':
           description: Signed upload payload
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/SignedUpload"
+                        $ref: '#/components/schemas/SignedUpload'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/images/profile:
     put:
@@ -982,19 +982,19 @@ paths:
                   type: string
                   format: uri
       responses:
-        "200":
+        '200':
           description: Profile picture saved
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/ProfileImageResult"
+                        $ref: '#/components/schemas/ProfileImageResult'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/images/hangout/{hangoutId}:
     post:
@@ -1004,7 +1004,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: "#/components/parameters/HangoutId"
+        - $ref: '#/components/parameters/HangoutId'
       requestBody:
         required: true
         content:
@@ -1017,19 +1017,19 @@ paths:
                   type: string
                   format: uri
       responses:
-        "200":
+        '200':
           description: Image recorded
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/HangoutImageResult"
+                        $ref: '#/components/schemas/HangoutImageResult'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
     delete:
       tags: [Images]
       summary: Remove hangout image
@@ -1037,7 +1037,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: "#/components/parameters/HangoutId"
+        - $ref: '#/components/parameters/HangoutId'
       requestBody:
         required: true
         content:
@@ -1050,19 +1050,19 @@ paths:
                   type: string
                   format: uri
       responses:
-        "200":
+        '200':
           description: Remaining images listed
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/HangoutImageList"
+                        $ref: '#/components/schemas/HangoutImageList'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/users/me:
     get:
@@ -1072,19 +1072,19 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "200":
+        '200':
           description: Profile info
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/UserProfile"
+                        $ref: '#/components/schemas/UserProfile'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
     delete:
       tags: [Users]
       summary: Permanently delete account
@@ -1092,21 +1092,21 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        "200":
+        '200':
           description: Account deleted
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       message:
                         type: string
                       data:
-                        $ref: "#/components/schemas/DeleteAccountResult"
+                        $ref: '#/components/schemas/DeleteAccountResult'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/subscriptions/validate-ios:
     post:
@@ -1127,19 +1127,19 @@ paths:
                   type: string
                   description: Base64 encoded App Store receipt
       responses:
-        "200":
+        '200':
           description: Receipt processed
           content:
             application/json:
               schema:
                 allOf:
-                  - $ref: "#/components/schemas/SuccessEnvelope"
+                  - $ref: '#/components/schemas/SuccessEnvelope'
                   - type: object
                     properties:
                       data:
-                        $ref: "#/components/schemas/IosReceiptResult"
+                        $ref: '#/components/schemas/IosReceiptResult'
         default:
-          $ref: "#/components/responses/ErrorResponse"
+          $ref: '#/components/responses/ErrorResponse'
 
   /api/admin/features:
     get:
@@ -1149,7 +1149,7 @@ paths:
       security:
         - adminApiKey: []
       responses:
-        "200":
+        '200':
           description: Feature catalog
           content:
             application/json:
@@ -1159,7 +1159,7 @@ paths:
                   features:
                     type: array
                     items:
-                      $ref: "#/components/schemas/FeatureFlag"
+                      $ref: '#/components/schemas/FeatureFlag'
     post:
       tags: [Admin Feature Flags]
       summary: Create feature flag
@@ -1171,9 +1171,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateFeatureRequest"
+              $ref: '#/components/schemas/CreateFeatureRequest'
       responses:
-        "201":
+        '201':
           description: Feature created
           content:
             application/json:
@@ -1181,7 +1181,7 @@ paths:
                 type: object
                 properties:
                   feature:
-                    $ref: "#/components/schemas/FeatureFlag"
+                    $ref: '#/components/schemas/FeatureFlag'
 
   /api/admin/features/{featureId}:
     delete:
@@ -1198,7 +1198,7 @@ paths:
             type: string
             format: uuid
       responses:
-        "204":
+        '204':
           description: Deleted
 
   /api/admin/features/{featureName}/default:
@@ -1225,7 +1225,7 @@ paths:
                 enabled:
                   type: boolean
       responses:
-        "200":
+        '200':
           description: Updated
           content:
             application/json:
@@ -1243,9 +1243,9 @@ paths:
       security:
         - adminApiKey: []
       parameters:
-        - $ref: "#/components/parameters/FeatureName"
+        - $ref: '#/components/parameters/FeatureName'
       responses:
-        "200":
+        '200':
           description: Operation summary
           content:
             application/json:
@@ -1265,9 +1265,9 @@ paths:
       security:
         - adminApiKey: []
       parameters:
-        - $ref: "#/components/parameters/FeatureName"
+        - $ref: '#/components/parameters/FeatureName'
       responses:
-        "200":
+        '200':
           description: Operation summary
           content:
             application/json:
@@ -1287,10 +1287,10 @@ paths:
       security:
         - adminApiKey: []
       parameters:
-        - $ref: "#/components/parameters/FeatureName"
-        - $ref: "#/components/parameters/AdminUserId"
+        - $ref: '#/components/parameters/FeatureName'
+        - $ref: '#/components/parameters/AdminUserId'
       responses:
-        "200":
+        '200':
           description: Result
           content:
             application/json:
@@ -1308,10 +1308,10 @@ paths:
       security:
         - adminApiKey: []
       parameters:
-        - $ref: "#/components/parameters/FeatureName"
-        - $ref: "#/components/parameters/AdminUserId"
+        - $ref: '#/components/parameters/FeatureName'
+        - $ref: '#/components/parameters/AdminUserId'
       responses:
-        "200":
+        '200':
           description: Result
           content:
             application/json:
@@ -1329,10 +1329,10 @@ paths:
       security:
         - adminApiKey: []
       parameters:
-        - $ref: "#/components/parameters/FeatureName"
-        - $ref: "#/components/parameters/AdminUserId"
+        - $ref: '#/components/parameters/FeatureName'
+        - $ref: '#/components/parameters/AdminUserId'
       responses:
-        "200":
+        '200':
           description: Result
           content:
             application/json:
@@ -1350,7 +1350,7 @@ paths:
       security:
         - adminApiKey: []
       parameters:
-        - $ref: "#/components/parameters/FeatureName"
+        - $ref: '#/components/parameters/FeatureName'
       requestBody:
         required: true
         content:
@@ -1367,7 +1367,7 @@ paths:
                   minItems: 1
                   maxItems: 1000
       responses:
-        "200":
+        '200':
           description: Result
           content:
             application/json:
@@ -1387,9 +1387,9 @@ paths:
       security:
         - adminApiKey: []
       parameters:
-        - $ref: "#/components/parameters/FeatureName"
+        - $ref: '#/components/parameters/FeatureName'
       responses:
-        "200":
+        '200':
           description: Matching users
           content:
             application/json:
@@ -1399,7 +1399,7 @@ paths:
                   users:
                     type: array
                     items:
-                      $ref: "#/components/schemas/FeatureUser"
+                      $ref: '#/components/schemas/FeatureUser'
 
   /api/admin/features/users/{userId}:
     get:
@@ -1409,9 +1409,9 @@ paths:
       security:
         - adminApiKey: []
       parameters:
-        - $ref: "#/components/parameters/AdminUserId"
+        - $ref: '#/components/parameters/AdminUserId'
       responses:
-        "200":
+        '200':
           description: Feature overrides
           content:
             application/json:
@@ -1421,7 +1421,7 @@ paths:
                   features:
                     type: array
                     items:
-                      $ref: "#/components/schemas/FeatureFlag"
+                      $ref: '#/components/schemas/FeatureFlag'
 
   /api/admin/api-keys:
     get:
@@ -1431,7 +1431,7 @@ paths:
       security:
         - adminApiKey: []
       responses:
-        "200":
+        '200':
           description: API key metadata (hashes not returned)
           content:
             application/json:
@@ -1441,7 +1441,7 @@ paths:
                   keys:
                     type: array
                     items:
-                      $ref: "#/components/schemas/AdminApiKey"
+                      $ref: '#/components/schemas/AdminApiKey'
     post:
       tags: [Admin API Keys]
       summary: Create admin API key
@@ -1453,14 +1453,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateAdminApiKeyRequest"
+              $ref: '#/components/schemas/CreateAdminApiKeyRequest'
       responses:
-        "201":
+        '201':
           description: API key issued (key value only shown once)
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CreateAdminApiKeyResponse"
+                $ref: '#/components/schemas/CreateAdminApiKeyResponse'
 
   /api/admin/api-keys/{keyId}:
     delete:
@@ -1477,7 +1477,7 @@ paths:
             type: string
             format: uuid
       responses:
-        "204":
+        '204':
           description: Revoked
 
   /api/admin/users/search/phone:
@@ -1494,7 +1494,7 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: Matching users
           content:
             application/json:
@@ -1508,7 +1508,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/AdminUserSummary"
+                      $ref: '#/components/schemas/AdminUserSummary'
 
   /api/admin/users/{userId}:
     get:
@@ -1518,9 +1518,9 @@ paths:
       security:
         - adminApiKey: []
       parameters:
-        - $ref: "#/components/parameters/AdminUserId"
+        - $ref: '#/components/parameters/AdminUserId'
       responses:
-        "200":
+        '200':
           description: User record with relations
           content:
             application/json:
@@ -1530,7 +1530,7 @@ paths:
                   success:
                     type: boolean
                   data:
-                    $ref: "#/components/schemas/AdminUserDetail"
+                    $ref: '#/components/schemas/AdminUserDetail'
     delete:
       tags: [Admin Users]
       summary: Hard delete user
@@ -1538,9 +1538,9 @@ paths:
       security:
         - adminApiKey: []
       parameters:
-        - $ref: "#/components/parameters/AdminUserId"
+        - $ref: '#/components/parameters/AdminUserId'
       responses:
-        "200":
+        '200':
           description: User deleted
           content:
             application/json:
@@ -1552,7 +1552,7 @@ paths:
                   message:
                     type: string
                   data:
-                    $ref: "#/components/schemas/DeleteAccountResult"
+                    $ref: '#/components/schemas/DeleteAccountResult'
 
   /api/admin/users/{userId}/upgrade-premium:
     post:
@@ -1562,7 +1562,7 @@ paths:
       security:
         - adminApiKey: []
       parameters:
-        - $ref: "#/components/parameters/AdminUserId"
+        - $ref: '#/components/parameters/AdminUserId'
       requestBody:
         content:
           application/json:
@@ -1574,7 +1574,7 @@ paths:
                   minimum: 1
                   default: 1
       responses:
-        "200":
+        '200':
           description: Premium activated
           content:
             application/json:
@@ -1584,7 +1584,7 @@ paths:
                   success:
                     type: boolean
                   data:
-                    $ref: "#/components/schemas/AdminPremiumUpgradeResult"
+                    $ref: '#/components/schemas/AdminPremiumUpgradeResult'
 
   /api/admin/jobs:
     get:
@@ -1594,7 +1594,7 @@ paths:
       security:
         - adminApiKey: []
       responses:
-        "200":
+        '200':
           description: Registered jobs
           content:
             application/json:
@@ -1608,7 +1608,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/JobDescriptor"
+                      $ref: '#/components/schemas/JobDescriptor'
 
   /api/admin/jobs/status:
     get:
@@ -1618,7 +1618,7 @@ paths:
       security:
         - adminApiKey: []
       responses:
-        "200":
+        '200':
           description: Status map
           content:
             application/json:
@@ -1628,7 +1628,7 @@ paths:
                   success:
                     type: boolean
                   data:
-                    $ref: "#/components/schemas/JobStatusMap"
+                    $ref: '#/components/schemas/JobStatusMap'
 
   /api/admin/jobs/executions:
     get:
@@ -1646,7 +1646,7 @@ paths:
             maximum: 500
             default: 50
       responses:
-        "200":
+        '200':
           description: Execution records
           content:
             application/json:
@@ -1660,7 +1660,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/JobExecution"
+                      $ref: '#/components/schemas/JobExecution'
 
   /api/admin/jobs/{jobName}/trigger:
     post:
@@ -1676,7 +1676,7 @@ paths:
           schema:
             type: string
       responses:
-        "202":
+        '202':
           description: Job accepted
           content:
             application/json:
@@ -1688,7 +1688,7 @@ paths:
                   message:
                     type: string
                   data:
-                    $ref: "#/components/schemas/JobTriggerResult"
+                    $ref: '#/components/schemas/JobTriggerResult'
 
   /api/admin/jobs/{jobName}/executions:
     get:
@@ -1711,7 +1711,7 @@ paths:
             maximum: 500
             default: 20
       responses:
-        "200":
+        '200':
           description: Execution history
           content:
             application/json:
@@ -1725,7 +1725,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/JobExecution"
+                      $ref: '#/components/schemas/JobExecution'
 components:
   securitySchemes:
     bearerAuth:
@@ -1748,7 +1748,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/ErrorEnvelope"
+            $ref: '#/components/schemas/ErrorEnvelope'
   parameters:
     FriendId:
       name: friendId
@@ -1882,7 +1882,7 @@ components:
       type: object
       properties:
         user:
-          $ref: "#/components/schemas/UserSummary"
+          $ref: '#/components/schemas/UserSummary'
         accessToken:
           type: string
         refreshToken:
@@ -1951,7 +1951,7 @@ components:
           format: uuid
           nullable: true
         targetFrequency:
-          $ref: "#/components/schemas/Frequency"
+          $ref: '#/components/schemas/Frequency'
         lastSeenDate:
           type: string
           format: date-time
@@ -1968,7 +1968,7 @@ components:
 
     FriendWithOverdue:
       allOf:
-        - $ref: "#/components/schemas/Friend"
+        - $ref: '#/components/schemas/Friend'
         - type: object
           properties:
             daysOverdue:
@@ -1986,7 +1986,7 @@ components:
           type: string
           nullable: true
         targetFrequency:
-          $ref: "#/components/schemas/Frequency"
+          $ref: '#/components/schemas/Frequency'
         notes:
           type: string
           nullable: true
@@ -1997,7 +1997,7 @@ components:
         friends:
           type: array
           items:
-            $ref: "#/components/schemas/Friend"
+            $ref: '#/components/schemas/Friend'
         total:
           type: integer
 
@@ -2007,7 +2007,7 @@ components:
         friends:
           type: array
           items:
-            $ref: "#/components/schemas/FriendWithOverdue"
+            $ref: '#/components/schemas/FriendWithOverdue'
         total:
           type: integer
 
@@ -2051,7 +2051,7 @@ components:
         hangouts:
           type: array
           items:
-            $ref: "#/components/schemas/HangoutLog"
+            $ref: '#/components/schemas/HangoutLog'
         total:
           type: integer
         hasMore:
@@ -2184,7 +2184,7 @@ components:
       type: object
       properties:
         hangoutRequest:
-          $ref: "#/components/schemas/HangoutRequest"
+          $ref: '#/components/schemas/HangoutRequest'
         isFreeTime:
           type: boolean
 
@@ -2200,7 +2200,7 @@ components:
       type: object
       properties:
         hangoutRequest:
-          $ref: "#/components/schemas/HangoutRequest"
+          $ref: '#/components/schemas/HangoutRequest'
         calendarEventCreated:
           type: boolean
         calendarEventDeleted:
@@ -2223,7 +2223,7 @@ components:
           maximum: 6
         loggingReminderTime:
           type: string
-          pattern: "^([0-1][0-9]|2[0-3]):([0-5][0-9])$"
+          pattern: '^([0-1][0-9]|2[0-3]):([0-5][0-9])$'
         reachoutReminderEnabled:
           type: boolean
         reachoutReminderDay:
@@ -2251,7 +2251,7 @@ components:
       type: object
       properties:
         settings:
-          $ref: "#/components/schemas/UserSettings"
+          $ref: '#/components/schemas/UserSettings'
         timezone:
           type: string
 
@@ -2364,7 +2364,7 @@ components:
         freeSlots:
           type: array
           items:
-            $ref: "#/components/schemas/AvailabilitySlot"
+            $ref: '#/components/schemas/AvailabilitySlot'
         totalFreeSlots:
           type: integer
         startDate:
@@ -2447,7 +2447,7 @@ components:
           additionalProperties: true
           nullable: true
         deliveryStatus:
-          $ref: "#/components/schemas/NotificationDeliveryStatus"
+          $ref: '#/components/schemas/NotificationDeliveryStatus'
         deliveredAt:
           type: string
           format: date-time
@@ -2469,7 +2469,7 @@ components:
         notifications:
           type: array
           items:
-            $ref: "#/components/schemas/NotificationHistory"
+            $ref: '#/components/schemas/NotificationHistory'
         total:
           type: integer
 
@@ -2491,7 +2491,7 @@ components:
       required: [notificationType]
       properties:
         notificationType:
-          $ref: "#/components/schemas/NotificationType"
+          $ref: '#/components/schemas/NotificationType'
         templateData:
           type: object
           additionalProperties:
@@ -2840,15 +2840,15 @@ components:
           type: string
           format: date-time
         settings:
-          $ref: "#/components/schemas/UserSettings"
+          $ref: '#/components/schemas/UserSettings'
         deviceTokens:
           type: array
           items:
-            $ref: "#/components/schemas/DeviceToken"
+            $ref: '#/components/schemas/DeviceToken'
         oauthAccounts:
           type: array
           items:
-            $ref: "#/components/schemas/OAuthAccount"
+            $ref: '#/components/schemas/OAuthAccount'
 
     AdminPremiumUpgradeResult:
       type: object
@@ -2871,7 +2871,7 @@ components:
         name:
           type: string
         status:
-          $ref: "#/components/schemas/JobStatus"
+          $ref: '#/components/schemas/JobStatus'
 
     JobStatus:
       type: object
@@ -2884,7 +2884,7 @@ components:
     JobStatusMap:
       type: object
       additionalProperties:
-        $ref: "#/components/schemas/JobStatus"
+        $ref: '#/components/schemas/JobStatus'
 
     JobExecution:
       type: object
