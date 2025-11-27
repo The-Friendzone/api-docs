@@ -964,10 +964,10 @@ paths:
           $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/images/profile:
-    put:
+    patch:
       tags: [Images]
       summary: Persist profile picture URL
-      operationId: putImagesProfile
+      operationId: patchImagesProfile
       security:
         - bearerAuth: []
       requestBody:
