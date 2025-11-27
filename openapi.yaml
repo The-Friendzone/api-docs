@@ -28,6 +28,7 @@ tags:
   - name: Admin API Keys
   - name: Admin Users
   - name: Admin Jobs
+  - name: Admin Analytics
 paths:
   /health:
     get:
@@ -1896,6 +1897,203 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/JobExecution'
+
+  /api/admin/analytics/events:
+    get:
+      tags: [Admin Analytics]
+      summary: Get paginated analytics events
+      operationId: getAdminAnalyticsEvents
+      security:
+        - adminApiKey: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 50
+          description: Items per page
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum: [createdAt, eventName, userId]
+            default: createdAt
+          description: Field to sort by
+        - in: query
+          name: sortOrder
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: Sort order
+        - in: query
+          name: userId
+          schema:
+            type: string
+          description: Filter by user ID
+        - in: query
+          name: eventName
+          schema:
+            type: string
+          description: Filter by event name
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date-time
+          description: Filter events after this date (ISO 8601)
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date-time
+          description: Filter events before this date (ISO 8601)
+      responses:
+        '200':
+          description: Analytics events retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/AnalyticsEvent'
+                      pagination:
+                        $ref: '#/components/schemas/PaginationInfo'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    delete:
+      tags: [Admin Analytics]
+      summary: Delete all analytics events
+      operationId: deleteAllAnalyticsEvents
+      security:
+        - adminApiKey: []
+      description: Delete all analytics events (for testing/cleanup)
+      responses:
+        '200':
+          description: All events deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          deletedCount:
+                            type: integer
+                            description: Number of events deleted
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /api/admin/analytics/event-counts:
+    get:
+      tags: [Admin Analytics]
+      summary: Get event counts grouped by event name
+      operationId: getAdminAnalyticsEventCounts
+      security:
+        - adminApiKey: []
+      parameters:
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date-time
+          description: Count events after this date (ISO 8601)
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date-time
+          description: Count events before this date (ISO 8601)
+      responses:
+        '200':
+          description: Event counts retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/EventCount'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /api/admin/analytics/unique-users/{eventName}:
+    get:
+      tags: [Admin Analytics]
+      summary: Get unique user count for a specific event
+      operationId: getAdminAnalyticsUniqueUsers
+      security:
+        - adminApiKey: []
+      parameters:
+        - name: eventName
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Event name to count unique users for
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date-time
+          description: Count users after this date (ISO 8601)
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date-time
+          description: Count users before this date (ISO 8601)
+      responses:
+        '200':
+          description: Unique user count retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          eventName:
+                            type: string
+                            description: Event name
+                          uniqueUserCount:
+                            type: integer
+                            description: Number of unique users
+                          startDate:
+                            type: string
+                            format: date-time
+                            nullable: true
+                          endDate:
+                            type: string
+                            format: date-time
+                            nullable: true
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -3138,3 +3336,52 @@ components:
         status:
           type: string
           example: triggered
+
+    AnalyticsEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+          description: User who triggered the event
+        eventName:
+          type: string
+          description: Event name (e.g., 'user_signed_up', 'friend_added')
+        properties:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: Event properties
+        createdAt:
+          type: string
+          format: date-time
+          description: When the event was tracked
+
+    EventCount:
+      type: object
+      properties:
+        eventName:
+          type: string
+          description: Event name
+        count:
+          type: integer
+          description: Number of occurrences
+
+    PaginationInfo:
+      type: object
+      properties:
+        page:
+          type: integer
+          description: Current page number
+        limit:
+          type: integer
+          description: Items per page
+        total:
+          type: integer
+          description: Total number of items
+        totalPages:
+          type: integer
+          description: Total number of pages
