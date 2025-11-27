@@ -628,6 +628,41 @@ paths:
         default:
           $ref: '#/components/responses/ErrorResponse'
 
+  /api/v1/settings/auto-prompt:
+    patch:
+      tags: [Settings]
+      summary: Update auto-prompt settings (V1 multiplayer feature)
+      description: |
+        Configure automatic hangout suggestions based on mutual calendar availability.
+        These settings are for V1 multiplayer mode and prepare the foundation for
+        automatic hangout prompts when both users are on the app.
+      operationId: patchAutoPromptSettings
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoPromptSettingsUpdate'
+      responses:
+        '200':
+          description: Auto-prompt settings updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          settings:
+                            $ref: '#/components/schemas/UserSettings'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
   /api/v1/calendar/connect:
     post:
       tags: [Calendar]
@@ -2322,6 +2357,13 @@ components:
           $ref: '#/components/schemas/HangoutRequest'
         isFreeTime:
           type: boolean
+        suggestedMessage:
+          type: string
+          description: |
+            Template-generated message for WhatsApp/SMS outreach.
+            Includes friend name, date, time, and venue details.
+            Client can copy to clipboard and paste into messaging app.
+          example: "Hey Sarah! Want to grab coffee on Thursday, Nov 28 at 7:00 PM? I was thinking Blue Bottle Coffee. Let me know! 😊"
 
     HangoutRequestStateUpdate:
       type: object
@@ -2369,6 +2411,23 @@ components:
           type: string
         hangoutRemindersEnabled:
           type: boolean
+        autoPromptEnabled:
+          type: boolean
+          description: Enable automatic hangout suggestions (V1 multiplayer)
+          default: false
+        autoPromptDays:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+            maximum: 6
+          description: Days of week to suggest hangouts (0=Sunday, 6=Saturday)
+          default: [4, 5, 6]
+        autoPromptTimePreference:
+          type: string
+          enum: [MORNING, AFTERNOON, EVENING]
+          description: Preferred time of day for hangout suggestions
+          default: EVENING
         language:
           type: string
         otherPreferences:
@@ -2409,6 +2468,27 @@ components:
           type: string
         hangoutRemindersEnabled:
           type: boolean
+
+    AutoPromptSettingsUpdate:
+      type: object
+      description: Update auto-prompt settings for V1 multiplayer hangout suggestions
+      properties:
+        autoPromptEnabled:
+          type: boolean
+          description: Enable/disable automatic hangout suggestions
+        autoPromptDays:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+            maximum: 6
+          minItems: 1
+          description: Days of week to suggest hangouts (0=Sunday, 6=Saturday)
+          example: [4, 5, 6]
+        autoPromptTimePreference:
+          type: string
+          enum: [MORNING, AFTERNOON, EVENING]
+          description: Preferred time of day for suggested hangouts
 
     User:
       type: object
