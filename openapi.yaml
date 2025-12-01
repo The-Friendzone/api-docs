@@ -1693,36 +1693,6 @@ paths:
         '204':
           description: Revoked
 
-  /api/admin/users/search/phone:
-    get:
-      tags: [Admin Users]
-      summary: Find users by phone
-      operationId: getAdminUsersByPhone
-      security:
-        - adminApiKey: []
-      parameters:
-        - in: query
-          name: phoneNumber
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Matching users
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  count:
-                    type: integer
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/AdminUserSummary'
-
   /api/admin/users/{userId}:
     get:
       tags: [Admin Users]
