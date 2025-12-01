@@ -212,12 +212,13 @@ paths:
     get:
       tags: [Friends]
       summary: List friends
+      description: Returns all friends with overdue data (daysOverdue and overdueScore) included
       operationId: getFriends
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: Pageless list of all friends for the user
+          description: Pageless list of all friends for the user with overdue calculations
           content:
             application/json:
               schema:
@@ -226,7 +227,7 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/FriendList'
+                        $ref: '#/components/schemas/FriendOverdueList'
         default:
           $ref: '#/components/responses/ErrorResponse'
     post:
@@ -256,28 +257,6 @@ paths:
                         properties:
                           friend:
                             $ref: '#/components/schemas/Friend'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-
-  /api/v1/friends/overdue:
-    get:
-      tags: [Friends]
-      summary: List overdue friends
-      operationId: getOverdueFriends
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Friends sorted by overdue score
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/FriendOverdueList'
         default:
           $ref: '#/components/responses/ErrorResponse'
 
@@ -333,11 +312,11 @@ paths:
         default:
           $ref: '#/components/responses/ErrorResponse'
 
-  /api/v1/friends/{friendId}/frequency:
     patch:
       tags: [Friends]
-      summary: Update friend frequency
-      operationId: patchFriendFrequency
+      summary: Update friend details
+      description: Update any friend fields (name, phoneNumber, targetFrequency, notes)
+      operationId: patchFriend
       security:
         - bearerAuth: []
       parameters:
@@ -347,14 +326,10 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [frequency]
-              properties:
-                frequency:
-                  $ref: '#/components/schemas/Frequency'
+              $ref: '#/components/schemas/UpdateFriendRequest'
       responses:
         '200':
-          description: Frequency updated
+          description: Friend updated
           content:
             application/json:
               schema:
@@ -505,11 +480,12 @@ paths:
         default:
           $ref: '#/components/responses/ErrorResponse'
 
-  /api/v1/hangouts/suggest/{hangoutRequestId}/state:
+  /api/v1/hangouts/suggest/{hangoutRequestId}:
     patch:
       tags: [Hangouts]
-      summary: Update hangout request status
-      operationId: patchHangoutRequestState
+      summary: Update hangout request
+      description: Update hangout request fields (currently only status is supported)
+      operationId: patchHangoutRequest
       security:
         - bearerAuth: []
       parameters:
@@ -524,10 +500,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/HangoutRequestStateUpdate'
+              $ref: '#/components/schemas/HangoutRequestUpdate'
       responses:
         '200':
-          description: Request status updated
+          description: Request updated
           content:
             application/json:
               schema:
@@ -536,7 +512,7 @@ paths:
                   - type: object
                     properties:
                       data:
-                        $ref: '#/components/schemas/HangoutRequestStateResult'
+                        $ref: '#/components/schemas/HangoutRequestUpdateResult'
         default:
           $ref: '#/components/responses/ErrorResponse'
 
@@ -561,12 +537,13 @@ paths:
                         $ref: '#/components/schemas/UserSettingsBundle'
         default:
           $ref: '#/components/responses/ErrorResponse'
-
-  /api/v1/settings/notifications:
     patch:
       tags: [Settings]
-      summary: Update notification preferences
-      operationId: patchNotificationSettings
+      summary: Update user settings
+      description: |
+        Update any user settings fields including timezone, notification preferences,
+        and auto-prompt settings (V1 multiplayer). All fields are optional.
+      operationId: patchSettings
       security:
         - bearerAuth: []
       requestBody:
@@ -574,46 +551,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NotificationPreferencesUpdate'
+              $ref: '#/components/schemas/SettingsUpdate'
       responses:
         '200':
-          description: Preferences updated
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          settings:
-                            $ref: '#/components/schemas/UserSettings'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-
-  /api/v1/settings/timezone:
-    patch:
-      tags: [Settings]
-      summary: Update timezone
-      operationId: patchTimezone
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [timezone]
-              properties:
-                timezone:
-                  type: string
-                  description: Valid IANA timezone identifier
-      responses:
-        '200':
-          description: Timezone updated
+          description: Settings updated
           content:
             application/json:
               schema:
@@ -626,41 +567,10 @@ paths:
                         properties:
                           user:
                             $ref: '#/components/schemas/User'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-
-  /api/v1/settings/auto-prompt:
-    patch:
-      tags: [Settings]
-      summary: Update auto-prompt settings (V1 multiplayer feature)
-      description: |
-        Configure automatic hangout suggestions based on mutual calendar availability.
-        These settings are for V1 multiplayer mode and prepare the foundation for
-        automatic hangout prompts when both users are on the app.
-      operationId: patchAutoPromptSettings
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AutoPromptSettingsUpdate'
-      responses:
-        '200':
-          description: Auto-prompt settings updated
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
+                            nullable: true
                           settings:
                             $ref: '#/components/schemas/UserSettings'
+                            nullable: true
         default:
           $ref: '#/components/responses/ErrorResponse'
 
@@ -2359,6 +2269,24 @@ components:
           type: string
           nullable: true
 
+    UpdateFriendRequest:
+      type: object
+      description: Update friend details (all fields are optional)
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        phoneNumber:
+          type: string
+          nullable: true
+        targetFrequency:
+          $ref: '#/components/schemas/Frequency'
+        notes:
+          type: string
+          maxLength: 500
+          nullable: true
+
     FriendList:
       type: object
       properties:
@@ -2563,15 +2491,16 @@ components:
             Client can copy to clipboard and paste into messaging app.
           example: "Hey Sarah! Want to grab coffee on Thursday, Nov 28 at 7:00 PM? I was thinking Blue Bottle Coffee. Let me know! 😊"
 
-    HangoutRequestStateUpdate:
+    HangoutRequestUpdate:
       type: object
+      description: Update hangout request (currently only status is supported)
       required: [status]
       properties:
         status:
           type: string
           enum: [ACCEPTED, DECLINED, CANCELLED]
 
-    HangoutRequestStateResult:
+    HangoutRequestUpdateResult:
       type: object
       properties:
         hangoutRequest:
@@ -2647,9 +2576,15 @@ components:
         timezone:
           type: string
 
-    NotificationPreferencesUpdate:
+    SettingsUpdate:
       type: object
+      description: |
+        Update user settings. All fields are optional.
+        Can update timezone (User field) and/or notification/auto-prompt settings (UserSettings fields).
       properties:
+        timezone:
+          type: string
+          description: Valid IANA timezone identifier
         loggingReminderEnabled:
           type: boolean
         loggingReminderDay:
@@ -2658,22 +2593,21 @@ components:
           maximum: 6
         loggingReminderTime:
           type: string
+          pattern: '^([0-1][0-9]|2[0-3]):([0-5][0-9])$'
         reachoutReminderEnabled:
           type: boolean
         reachoutReminderDay:
           type: integer
+          minimum: 0
+          maximum: 6
         reachoutReminderTime:
           type: string
+          pattern: '^([0-1][0-9]|2[0-3]):([0-5][0-9])$'
         hangoutRemindersEnabled:
           type: boolean
-
-    AutoPromptSettingsUpdate:
-      type: object
-      description: Update auto-prompt settings for V1 multiplayer hangout suggestions
-      properties:
         autoPromptEnabled:
           type: boolean
-          description: Enable/disable automatic hangout suggestions
+          description: Enable/disable automatic hangout suggestions (V1 multiplayer)
         autoPromptDays:
           type: array
           items:
