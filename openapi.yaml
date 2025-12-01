@@ -427,6 +427,66 @@ paths:
         default:
           $ref: '#/components/responses/ErrorResponse'
 
+  /api/v1/hangouts/{hangoutId}:
+    patch:
+      tags: [Hangouts]
+      summary: Update hangout log
+      description: Update hangout log details (hangoutDate, notes, imageUrls)
+      operationId: patchHangout
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/HangoutId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHangoutRequest'
+      responses:
+        '200':
+          description: Hangout updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          hangout:
+                            $ref: '#/components/schemas/HangoutLog'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    delete:
+      tags: [Hangouts]
+      summary: Delete hangout log
+      description: Delete a hangout log entry
+      operationId: deleteHangout
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/HangoutId'
+      responses:
+        '200':
+          description: Hangout deleted
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          success:
+                            type: boolean
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
   /api/v1/hangouts/stats:
     get:
       tags: [Hangouts]
@@ -453,6 +513,47 @@ paths:
           $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/hangouts/suggest:
+    get:
+      tags: [Hangouts]
+      summary: List hangout requests
+      description: Get all hangout requests (sent and received) with optional filters
+      operationId: getHangoutsSuggest
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [sent, received]
+          description: Filter by sent or received requests
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [PENDING, ACCEPTED, DECLINED, CANCELLED]
+          description: Filter by request status
+      responses:
+        '200':
+          description: List of hangout requests
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          requests:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/HangoutRequest'
+                          total:
+                            type: integer
+        default:
+          $ref: '#/components/responses/ErrorResponse'
     post:
       tags: [Hangouts]
       summary: Create hangout request
@@ -481,6 +582,37 @@ paths:
           $ref: '#/components/responses/ErrorResponse'
 
   /api/v1/hangouts/suggest/{hangoutRequestId}:
+    get:
+      tags: [Hangouts]
+      summary: Get hangout request details
+      description: Get details of a specific hangout request
+      operationId: getHangoutRequestById
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: hangoutRequestId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Hangout request details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          request:
+                            $ref: '#/components/schemas/HangoutRequest'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
     patch:
       tags: [Hangouts]
       summary: Update hangout request
@@ -2375,6 +2507,25 @@ components:
           type: string
           format: uuid
           nullable: true
+
+    UpdateHangoutRequest:
+      type: object
+      description: Update hangout log (all fields are optional, but at least one must be provided)
+      properties:
+        hangoutDate:
+          type: string
+          format: date-time
+          description: Cannot be set to a future date
+        notes:
+          type: string
+          maxLength: 1000
+          nullable: true
+        imageUrls:
+          type: array
+          items:
+            type: string
+            format: uri
+          maxItems: 10
 
     HangoutStats:
       type: object
