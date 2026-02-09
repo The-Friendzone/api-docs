@@ -28,6 +28,12 @@ tags:
   - name: Admin API Keys
   - name: Admin Users
   - name: Admin Jobs
+  - name: Suggestions
+    description: |
+      AI-powered activity suggestions for hangout requests. Generation is
+      client-driven — the client must call POST /suggestions/generate after
+      creating or accepting a hangout request. Suggestions are automatically
+      deleted server-side when a hangout request is DECLINED or CANCELLED.
   - name: Admin Analytics
 paths:
   /health:
@@ -591,6 +597,10 @@ paths:
     post:
       tags: [Hangouts]
       summary: Create hangout request
+      description: |
+        Creates a new hangout request. Activity suggestion generation is intentionally
+        NOT triggered server-side; the client must call `POST /api/v1/suggestions/generate`
+        separately to keep creation fast and decoupled from external APIs.
       operationId: postHangoutsRequest
       security:
         - bearerAuth: []
@@ -650,7 +660,13 @@ paths:
     patch:
       tags: [Hangouts]
       summary: Update hangout request
-      description: Update hangout request fields (currently only status is supported)
+      description: |
+        Update hangout request status (ACCEPTED, DECLINED, or CANCELLED).
+        On ACCEPTANCE, the client must call `POST /api/v1/suggestions/generate`
+        separately to generate activity suggestions.
+        On DECLINED or CANCELLED, the server automatically deletes any associated
+        activity suggestions (best-effort). COMPLETED requests keep their suggestions
+        as historical record.
       operationId: patchHangoutRequest
       security:
         - bearerAuth: []
@@ -679,6 +695,187 @@ paths:
                     properties:
                       data:
                         $ref: '#/components/schemas/HangoutRequestUpdateResult'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /api/v1/suggestions/generate:
+    post:
+      tags: [Suggestions]
+      summary: Generate activity suggestions
+      description: |
+        Generate AI-powered activity suggestions for a hangout request.
+        Uses Claude AI for personalized suggestions and Google Places for venue data,
+        with graceful degradation to template-based suggestions when services are
+        unavailable. Replaces all existing suggestions for the hangout request on
+        each call (full regenerate). Rate-limited to 5 requests per minute.
+
+        Returns 409 Conflict if the hangout request is in a terminal state
+        (DECLINED, CANCELLED, or COMPLETED).
+      operationId: postSuggestionsGenerate
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateSuggestionsRequest'
+      responses:
+        '201':
+          description: Suggestions generated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          suggestions:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/ActivitySuggestion'
+        '404':
+          description: Hangout request not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '403':
+          description: User does not have access to this hangout request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '409':
+          description: Hangout request is in a terminal state (DECLINED, CANCELLED, or COMPLETED)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /api/v1/suggestions/{hangoutRequestId}:
+    get:
+      tags: [Suggestions]
+      summary: Get suggestions for a hangout request
+      description: |
+        Retrieve all activity suggestions for a specific hangout request.
+        The caller must be the initiator or recipient of the hangout request.
+
+        Returns 409 Conflict if the hangout request is in a terminal state
+        (DECLINED, CANCELLED, or COMPLETED).
+      operationId: getSuggestionsByHangoutRequestId
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: hangoutRequestId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Suggestions retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          suggestions:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/ActivitySuggestion'
+        '404':
+          description: Hangout request not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '403':
+          description: User does not have access to this hangout request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '409':
+          description: Hangout request is in a terminal state (DECLINED, CANCELLED, or COMPLETED)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /api/v1/suggestions/{suggestionId}/status:
+    patch:
+      tags: [Suggestions]
+      summary: Accept or dismiss a suggestion
+      description: |
+        Update the status of an activity suggestion. When a suggestion is ACCEPTED,
+        its venue data (name, address, details) is automatically copied to the
+        parent hangout request.
+
+        Returns 409 Conflict if the parent hangout request is in a terminal state
+        (DECLINED, CANCELLED, or COMPLETED).
+      operationId: patchSuggestionStatus
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: suggestionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSuggestionStatusRequest'
+      responses:
+        '200':
+          description: Suggestion status updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          suggestion:
+                            $ref: '#/components/schemas/ActivitySuggestion'
+        '404':
+          description: Suggestion or hangout request not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '403':
+          description: User does not have access to this suggestion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '409':
+          description: Hangout request is in a terminal state (DECLINED, CANCELLED, or COMPLETED)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
         default:
           $ref: '#/components/responses/ErrorResponse'
 
@@ -1195,6 +1392,39 @@ paths:
                     properties:
                       data:
                         $ref: '#/components/schemas/UserProfile'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    patch:
+      tags: [Users]
+      summary: Update current user profile
+      description: |
+        Update profile fields (name, city). All fields are optional but at least
+        one must be provided. The city field is used as the default location for
+        venue searches when generating activity suggestions.
+      operationId: patchUsersMe
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserProfileRequest'
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            $ref: '#/components/schemas/User'
         default:
           $ref: '#/components/responses/ErrorResponse'
     delete:
@@ -2673,6 +2903,117 @@ components:
         calendarEventDeleted:
           type: boolean
 
+    ActivitySuggestion:
+      type: object
+      description: An AI-generated or template-based activity suggestion for a hangout request
+      properties:
+        id:
+          type: string
+          format: uuid
+        hangoutRequestId:
+          type: string
+          format: uuid
+        activityName:
+          type: string
+          description: Short name for the suggested activity
+          example: Coffee & Catch-up
+        activityCategory:
+          type: string
+          enum: [COFFEE, MEAL, ACTIVITY, DRINKS, HOME, OTHER]
+          description: Category of the activity
+        description:
+          type: string
+          description: AI-generated description of the activity
+          example: Find a cozy local coffee shop and spend some quality time catching up over lattes.
+        venueName:
+          type: string
+          nullable: true
+          description: Suggested venue name (from Google Places or AI)
+        venueAddress:
+          type: string
+          nullable: true
+          description: Venue street address
+        venueGooglePlaceId:
+          type: string
+          nullable: true
+          description: Google Places ID for deep-linking
+        venueRating:
+          type: number
+          nullable: true
+          description: Google Places rating (1.0–5.0)
+        venuePhotoUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: Venue photo URL from Google Places
+        venuePriceLevel:
+          type: integer
+          nullable: true
+          description: Google Places price level (0–4)
+          minimum: 0
+          maximum: 4
+        venueDetails:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: Additional venue metadata (types, userRatingsTotal, openNow)
+        triggerType:
+          type: string
+          enum: [CREATION, ACCEPTANCE, ON_DEMAND]
+          description: What triggered this suggestion generation
+        status:
+          type: string
+          enum: [PENDING, ACCEPTED, DISMISSED]
+          default: PENDING
+          description: Whether the user has acted on this suggestion
+        displayOrder:
+          type: integer
+          description: Ordering hint for UI display (0-based)
+          default: 0
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    GenerateSuggestionsRequest:
+      type: object
+      required: [hangoutRequestId, triggerType]
+      properties:
+        hangoutRequestId:
+          type: string
+          format: uuid
+          description: The hangout request to generate suggestions for
+        triggerType:
+          type: string
+          enum: [CREATION, ACCEPTANCE, ON_DEMAND]
+          description: |
+            What triggered this generation. CREATION = after creating a hangout
+            request, ACCEPTANCE = after accepting, ON_DEMAND = user-initiated
+            regeneration.
+        locationOverride:
+          type: string
+          maxLength: 200
+          description: Optional city/location override (defaults to the user's city from profile)
+        numberOfSuggestions:
+          type: integer
+          minimum: 1
+          maximum: 5
+          default: 3
+          description: Number of suggestions to generate
+
+    UpdateSuggestionStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ACCEPTED, DISMISSED]
+          description: |
+            ACCEPTED copies venue data to the hangout request.
+            DISMISSED marks the suggestion as not wanted.
+
     UserSettings:
       type: object
       properties:
@@ -2803,6 +3144,10 @@ components:
           nullable: true
         phoneVerified:
           type: boolean
+        city:
+          type: string
+          nullable: true
+          description: Default city for venue searches in activity suggestions
         timezone:
           type: string
         profilePictureUrl:
@@ -3097,6 +3442,10 @@ components:
           type: string
           format: uri
           nullable: true
+        city:
+          type: string
+          nullable: true
+          description: Default city for venue searches in activity suggestions
         timezone:
           type: string
         isPremium:
@@ -3137,6 +3486,23 @@ components:
       properties:
         success:
           type: boolean
+
+    UpdateUserProfileRequest:
+      type: object
+      description: |
+        Update user profile fields. All fields are optional but at least one
+        must be provided.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Display name
+        city:
+          type: string
+          maxLength: 200
+          nullable: true
+          description: Default city for venue searches in activity suggestions. Set to null to clear.
 
     IosReceiptResult:
       type: object
@@ -3332,6 +3698,10 @@ components:
           type: string
           format: uri
           nullable: true
+        city:
+          type: string
+          nullable: true
+          description: Default city for venue searches in activity suggestions
         timezone:
           type: string
         isPremium:
